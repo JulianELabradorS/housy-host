@@ -30,8 +30,6 @@ Endpoint to save all reservations from Hostaway to Firebase. You have to make a 
 ![imagen](https://user-images.githubusercontent.com/31170000/218461581-7acdf17a-3097-4687-80ab-4c425a99baf3.png)
 
 
-Execute a 
-
 ### Webhook that updates the reservations data
 You have to add that .ngrok.io address to the [Unified webhook](https://dashboard.hostaway.com/settings/integrations) in Hostaway dashboard.
 > The added url in hostaway dashboard should be pointing to /unified-webhook endpoint. Example: http://31fc-181-165-197-31.ngrok.io/unified-webhook
