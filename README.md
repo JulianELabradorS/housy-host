@@ -8,6 +8,10 @@ Use the package manager [pip](https://pip.pypa.io/en/stable/) to install the pac
 pip install -r requirements.txt
 ```
 
+Add Firebase credentials file to `/assets` with the name firebase-credentials.json
+![imagen](https://user-images.githubusercontent.com/31170000/218464356-d864fba8-316d-47a3-9a21-282d3314ff5f.png)
+
+
 ## Usage
 
 Execute the reservations controller file
@@ -25,8 +29,6 @@ Endpoint to save all reservations from Hostaway to Firebase. You have to make a 
 
 ![imagen](https://user-images.githubusercontent.com/31170000/218461581-7acdf17a-3097-4687-80ab-4c425a99baf3.png)
 
-
-Execute a 
 
 ### Webhook that updates the reservations data
 You have to add that .ngrok.io address to the [Unified webhook](https://dashboard.hostaway.com/settings/integrations) in Hostaway dashboard.
