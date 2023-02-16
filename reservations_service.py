@@ -1,6 +1,7 @@
 import requests
 import time
-import reservations_repository
+import reservations_repository_firebase
+import reservations_repository_bigquery
 
 limit = 500
 offset = 0
@@ -19,8 +20,12 @@ def getReservations():
     print("Number of reservations loaded: " + str(offset) +
           "\nAnd this result: " + str(len(response['result'])))
 
-    result = reservations_repository.save_reservations(response['result'])
-    print(result)
+    # result = reservations_repository_firebase.save_reservations(
+    #     response['result'])
+
+    # print(result)
+
+    reservations_repository_bigquery.insert_rows_from_list(response['result'])
 
     return response
 
@@ -43,10 +48,12 @@ def load_reservations():
 
 
 def create_reservation(reservation):
-    result = reservations_repository.create_reservation(reservation)
-    print(result)
+    # result = reservations_repository_firebase.create_reservation(reservation)
+    reservations_repository_bigquery.insert_rows_from_list([reservation])
+    # print(result)
 
 
 def update_reservation(reservation):
-    result = reservations_repository.update_reservation(reservation)
-    print(result)
+    # result = reservations_repository_firebase.update_reservation(reservation)
+    reservations_repository_bigquery.update_row(reservation)
+    # print(result)
