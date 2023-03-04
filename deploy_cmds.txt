@@ -1,0 +1,5 @@
+docker build -t gcr.io/tribal-joy-378015/flaskapp_cr:v2 -f Dockerfile .
+
+docker push gcr.io/tribal-joy-378015/flaskapp_cr:v2
+
+gcloud run deploy flaskapp-cr-v2  --image gcr.io/tribal-joy-378015/flaskapp_cr:v2  --region us-east1  --platform managed  --memory 512Mi
