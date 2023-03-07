@@ -1,6 +1,7 @@
 import json
 import asyncio
 from flask import Flask, request
+from flask_cors import CORS, cross_origin
 # from flask_ngrok import run_with_ngrok
 import reservations_service
 
@@ -8,10 +9,12 @@ RESERVATION_UPDATED = "reservation.updated"
 RESERVATION_CREATED = "reservation.created"
 
 app = Flask(__name__)
+cors = CORS(app)
 # run_with_ngrok(app)
 
 
 @app.route("/")
+@cross_origin()
 def test():
     return "API Working", 200
 
@@ -44,6 +47,7 @@ def unified_webhook():
 
 
 @app.route("/reservations", methods=["GET"])
+@cross_origin()
 def get_reservations():
     result = reservations_service.get_reservations()
     print(result)
