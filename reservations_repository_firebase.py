@@ -1,6 +1,8 @@
+import json
+
 import firebase_admin
-from firebase_admin import credentials
-from firebase_admin import firestore
+from firebase_admin import credentials, firestore
+
 from models.reservation import Reservation
 from utils.dates import get_month, get_year
 
@@ -57,6 +59,28 @@ def get_reservations():
             reservations.append(get_reservation_object(res._data))
 
         return reservations
+    except Exception as e:
+        print(e)
+
+
+def get_paginated_reservations(limit, start_at):
+    try:
+        reservations = []
+
+        if (start_at):
+            query = firestore_client.collection(
+                "reservations").order_by(u'id').start_after({u'id': str(start_at)}).limit(int(limit))
+        else:
+            query = firestore_client.collection(
+                "reservations").order_by(u'id').limit(int(limit))
+
+        result = query.get()
+
+        for res in result:
+            reservations.append(get_reservation_object(res._data))
+
+        return {'reservations': [obj.__dict__ for obj in reservations],
+                'last_id': reservations[-1].id}
     except Exception as e:
         print(e)
 

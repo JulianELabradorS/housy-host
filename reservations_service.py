@@ -52,3 +52,7 @@ def update_reservation(reservation):
 
 def get_reservations():
     return reservations_repository_firebase.get_reservations()
+
+
+def get_paginated_reservations(limit, start_at):
+    return reservations_repository_firebase.get_paginated_reservations(limit, start_at)
