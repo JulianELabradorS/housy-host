@@ -63,16 +63,18 @@ def get_reservations():
         print(e)
 
 
-def get_paginated_reservations(limit, start_at):
+def get_paginated_reservations(limit, start_at, order_by, direction):
+    direction = firestore.Query.DESCENDING if direction == "descending" else firestore.Query.ASCENDING
+
     try:
         reservations = []
 
         if (start_at):
             query = firestore_client.collection(
-                "reservations").order_by(u'id').start_after({u'id': str(start_at)}).limit(int(limit))
+                "reservations").order_by(order_by, direction=direction).start_at({u'id': int(start_at)}).limit(int(limit))
         else:
             query = firestore_client.collection(
-                "reservations").order_by(u'id').limit(int(limit))
+                "reservations").order_by(order_by, direction=direction).limit(int(limit))
 
         result = query.get()
 

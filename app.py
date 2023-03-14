@@ -59,7 +59,14 @@ def get_paginated_reservations():
     limit = request.args.get("limit")
     start_at = request.args.get("start_at")
 
-    result = reservations_service.get_paginated_reservations(limit, start_at)
+    order_by = request.args.get("order_by")
+    order_by = order_by if order_by != None else "id"
+
+    direction = request.args.get("direction")
+    direction = direction if direction != None else "descending"
+
+    result = reservations_service.get_paginated_reservations(
+        limit, start_at, order_by, direction)
 
     return json.dumps(result), 200
 
