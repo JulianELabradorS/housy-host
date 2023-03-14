@@ -56,3 +56,7 @@ def get_reservations():
 
 def get_paginated_reservations(limit, start_at, order_by, direction):
     return reservations_repository_firebase.get_paginated_reservations(limit, start_at, order_by, direction)
+
+
+def get_properties():
+    return reservations_repository_firebase.get_properties()

@@ -2,7 +2,6 @@ import json
 import asyncio
 from flask import Flask, request
 from flask_cors import CORS, cross_origin
-# from flask_ngrok import run_with_ngrok
 import reservations_service
 
 RESERVATION_UPDATED = "reservation.updated"
@@ -10,7 +9,6 @@ RESERVATION_CREATED = "reservation.created"
 
 app = Flask(__name__)
 cors = CORS(app)
-# run_with_ngrok(app)
 
 
 @app.route("/")
@@ -69,6 +67,14 @@ def get_paginated_reservations():
         limit, start_at, order_by, direction)
 
     return json.dumps(result), 200
+
+
+@app.route("/get-properties", methods=["GET"])
+@cross_origin()
+def get_properties():
+    result = reservations_service.get_properties()
+
+    return json.dumps(result)
 
 
 if __name__ == "__main__":

@@ -28,3 +28,4 @@ class Reservation:
         self.negociacion = negociacion
         self.mes = mes
         self.anio = anio
+# Curency

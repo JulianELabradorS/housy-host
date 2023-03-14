@@ -18,6 +18,9 @@ def save_reservations(reservations):
         for reservation in reservations:
             reservation = complete_columns_data(reservation)
             batch.set(collection.document(str(reservation["id"])), reservation)
+
+            update_properties(reservation["listingName"])
+
         batch.commit()
         return "Batch saved"
     except Exception as e:
@@ -32,6 +35,8 @@ def create_reservation(reservation):
             "reservations").document(str(reservation['id']))
         document.set(reservation)
 
+        update_properties(reservation["listingName"])
+
         return "Reservation saved"
 
     except Exception as e:
@@ -44,6 +49,8 @@ def update_reservation(reservation):
         document = firestore_client.collection(
             "reservations").document(str(reservation['id']))
         document.update(reservation)
+
+        update_properties(reservation["listingName"])
 
         return "Reservation updated"
     except Exception as e:
@@ -114,3 +121,26 @@ def complete_columns_data(reservation):
     reservation["anio"] = get_year(reservation["reservationDate"])
 
     return reservation
+
+
+def get_properties():
+    try:
+        result = firestore_client.collection(
+            "properties").get()
+
+        return {"properties": [res._data["listingName"] for res in result]}
+    except Exception as e:
+        print(e)
+
+
+def update_properties(listingName):
+    result = firestore_client.collection(
+        "properties").get()
+
+    properties = [res._data["listingName"] for res in result]
+
+    if listingName in properties:
+        return
+
+    document = firestore_client.collection(
+        "properties").add({"listingName": listingName})
