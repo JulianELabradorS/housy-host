@@ -1,10 +1,8 @@
-import json
-
 import firebase_admin
 from firebase_admin import credentials, firestore
-
+from models.property import Property
 from models.reservation import Reservation
-from utils.dates import get_month, get_year
+from utils.dates import get_month, get_month_str, get_year
 
 cred = credentials.Certificate("./assets/cloudconsole.credentials.json")
 firebase_admin.initialize_app(cred)
@@ -19,7 +17,7 @@ def save_reservations(reservations):
             reservation = complete_columns_data(reservation)
             batch.set(collection.document(str(reservation["id"])), reservation)
 
-            update_properties(reservation["listingName"])
+            check_new_property(reservation["listingName"])
 
         batch.commit()
         return "Batch saved"
@@ -35,7 +33,7 @@ def create_reservation(reservation):
             "reservations").document(str(reservation['id']))
         document.set(reservation)
 
-        update_properties(reservation["listingName"])
+        check_new_property(reservation["listingName"])
 
         return "Reservation saved"
 
@@ -44,13 +42,14 @@ def create_reservation(reservation):
         # reservation["airbnbListingCleaningFee"] if reservation["channelName"] == "airbnbOfficial" else reservation["cleaningFee"],
 
 
-def update_reservation(reservation):
+def update_reservation(reservation, check_property=True):
     try:
         document = firestore_client.collection(
             "reservations").document(str(reservation['id']))
         document.update(reservation)
 
-        update_properties(reservation["listingName"])
+        if check_property:
+            check_new_property(reservation["listingName"])
 
         return "Reservation updated"
     except Exception as e:
@@ -109,7 +108,11 @@ def get_reservation_object(reservation) -> Reservation:
         reservation["channelName"],
         reservation["negociacion"] if "negociacion" in reservation else "",
         reservation["mes"],
-        reservation["anio"]
+        reservation["anio"],
+        reservation["listingName"],
+        reservation["currency"],
+        reservation["trm"] if "trm" in reservation else "",
+        reservation["cop"] if "cop" in reservation else "",
     )
 
 
@@ -117,8 +120,34 @@ def complete_columns_data(reservation):
     reservation["aseoPpto"] = reservation["airbnbListingCleaningFee"] if reservation[
         "channelName"] == "airbnbOfficial" else reservation["cleaningFee"]
     reservation["aseoReal"] = reservation["aseoPpto"]
-    reservation["mes"] = get_month(reservation["reservationDate"])
+    reservation["mes"] = get_month_str(reservation["reservationDate"])
+    reservation["monthNumber"] = get_month(reservation["reservationDate"])
     reservation["anio"] = get_year(reservation["reservationDate"])
+
+    return reservation
+
+
+def complete_calculated_columns_of_negotiation(reservation):
+    negotiationPercentage = int(reservation["negotiation"])
+    reservation["comisionPpto"] = negotiationPercentage * \
+        int(reservation["totalPrice"])
+
+    if ("presupuestoReal" in reservation):
+        reservation["comisionReal"] = negotiationPercentage * \
+            (int(reservation["presupuestoReal"]) -
+             int(reservation["aseoReal"]))
+
+        reservation["netoPropietario"] = int(reservation["presupuestoReal"]) - \
+            int(reservation["comisionReal"])
+
+    return reservation
+
+
+def complete_calculated_columns_of_trm(reservation):
+    trm = reservation["trm"]
+
+    if (reservation["currency"] != "COP"):
+        reservation["cop"] = int(reservation["totalPrice"]) * int(trm)
 
     return reservation
 
@@ -133,7 +162,7 @@ def get_properties():
         print(e)
 
 
-def update_properties(listingName):
+def check_new_property(listingName):
     result = firestore_client.collection(
         "properties").get()
 
@@ -142,5 +171,55 @@ def update_properties(listingName):
     if listingName in properties:
         return
 
-    document = firestore_client.collection(
+    firestore_client.collection(
         "properties").add({"listingName": listingName})
+
+
+def update_computed_values(property: Property):
+    update_computed_values_of_negotiation(property)
+    update_computed_values_of_trm(property)
+
+
+def update_computed_values_of_negotiation(property: Property):
+    lastNegotiation = property.negotiations[-1]
+
+    fileteredReservations = firestore_client.collection(
+        "reservations").where(u'listingName', u'==', property.listingName).where(u'anio', u'>=', lastNegotiation.fromYear).where(u'anio', u'<=', lastNegotiation.toYear).get()
+
+    for res in fileteredReservations:
+        jsonReservation = res._data
+        if (jsonReservation["monthNumber"] >= lastNegotiation.fromMonth
+                & jsonReservation["monthNumber"] <= lastNegotiation.toMonth):
+            jsonReservation["negotiation"] = lastNegotiation.percentage
+
+            update_reservation(
+                complete_calculated_columns_of_negotiation(jsonReservation), False)
+
+
+def update_computed_values_of_trm(property: Property):
+    lastTrm = property.trms[-1]
+
+    fileteredReservations = firestore_client.collection(
+        "reservations").where(u'listingName', u'==', property.listingName).where(u'anio', u'>=', lastTrm.fromYear).where(u'anio', u'<=', lastTrm.toYear).get()
+
+    for res in fileteredReservations:
+        jsonReservation = res._data
+        if (jsonReservation["monthNumber"] >= lastTrm.fromMonth
+                & jsonReservation["monthNumber"] <= lastTrm.toMonth):
+            jsonReservation["trm"] = lastTrm.trm
+            update_reservation(
+                complete_calculated_columns_of_trm(jsonReservation), False)
+
+
+def update_property(property):
+    documentId = firestore_client.collection(
+        "properties").where(u'listingName', u'==', property["listingName"]).get()
+
+    document = firestore_client.collection(
+        "properties").document(documentId[0].id)
+
+    document.update(property)
+
+    update_computed_values(Property(property))
+
+    return "OK"

@@ -1,7 +1,7 @@
 from datetime import datetime
 
 
-def get_month(date) -> str:
+def get_month_str(date) -> str:
     stringDate = date.split(" ")[0]
     monthNumber = datetime.strptime(stringDate, "%Y-%m-%d").month
 
@@ -31,6 +31,12 @@ def get_month(date) -> str:
         return "Diciembre"
 
     return "Error"
+
+
+def get_month(date) -> str:
+    stringDate = date.split(" ")[0]
+    monthNumber = datetime.strptime(stringDate, "%Y-%m-%d").month
+    return monthNumber
 
 
 def get_year(date) -> str:

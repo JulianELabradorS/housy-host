@@ -13,7 +13,11 @@ class Reservation:
                  origen: str,
                  negociacion: str,
                  mes: str,
-                 anio: str,):
+                 anio: str,
+                 listingName: str,
+                 currency: str,
+                 trm: str,
+                 cop: str):
         self.id = idReserva
         self.guestName = reserva
         self.totalPrice = presupuesto
@@ -28,4 +32,7 @@ class Reservation:
         self.negociacion = negociacion
         self.mes = mes
         self.anio = anio
-# Curency
+        self.listingName = listingName
+        self.currency = currency
+        self.trm = trm
+        self.cop = cop

@@ -24,7 +24,7 @@ def getHostawayReservations():
     return response
 
 
-async def load_reservations():
+def load_reservations():
     start_time = time.time()
     print("Started loading from Hostaway")
 
@@ -60,3 +60,7 @@ def get_paginated_reservations(limit, start_at, order_by, direction):
 
 def get_properties():
     return reservations_repository_firebase.get_properties()
+
+
+def update_property(property):
+    return reservations_repository_firebase.update_property(property)

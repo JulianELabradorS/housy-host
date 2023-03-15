@@ -19,10 +19,7 @@ def test():
 
 @app.route("/load-reservations")
 def load_reservations():
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    loop.create_task(reservations_service.load_reservations())
-    loop.run_forever()
+    reservations_service.load_reservations()
 
     return "The load proceess started", 200
 
@@ -75,6 +72,16 @@ def get_properties():
     result = reservations_service.get_properties()
 
     return json.dumps(result)
+
+
+@app.route("/update-property", methods=['POST'])
+@cross_origin()
+def update_property():
+    parsed_request = request.json
+
+    result = reservations_service.update_property(parsed_request)
+
+    return result
 
 
 if __name__ == "__main__":
