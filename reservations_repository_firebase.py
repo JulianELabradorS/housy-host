@@ -15,6 +15,8 @@ def save_reservations(reservations):
         collection = firestore_client.collection("reservations")
         for reservation in reservations:
             reservation = complete_columns_data(reservation)
+            reservation = calculate_columns_new_reservation(reservation)
+
             batch.set(collection.document(str(reservation["id"])), reservation)
 
             check_new_property(reservation["listingName"])
@@ -28,6 +30,7 @@ def save_reservations(reservations):
 def create_reservation(reservation):
     try:
         reservation = complete_columns_data(reservation)
+        reservation = calculate_columns_new_reservation(reservation)
 
         document = firestore_client.collection(
             "reservations").document(str(reservation['id']))
@@ -39,17 +42,16 @@ def create_reservation(reservation):
 
     except Exception as e:
         return "ERROR. Reservation not saved. Exception %" % e
-        # reservation["airbnbListingCleaningFee"] if reservation["channelName"] == "airbnbOfficial" else reservation["cleaningFee"],
 
 
-def update_reservation(reservation, check_property=True):
+def update_reservation(reservation):
     try:
+        property = get_property(reservation["listingName"])
+        reservation = update_computed_values(property)
+
         document = firestore_client.collection(
             "reservations").document(str(reservation['id']))
         document.update(reservation)
-
-        if check_property:
-            check_new_property(reservation["listingName"])
 
         return "Reservation updated"
     except Exception as e:
@@ -127,6 +129,17 @@ def complete_columns_data(reservation):
     return reservation
 
 
+def calculate_columns_new_reservation(reservation):
+    reservation['trm'] = get_property_last_trm(reservation["listingName"])
+    reservation['negotiation'] = get_property_last_negotiation(
+        reservation["listingName"])
+
+    reservation = complete_calculated_columns_of_trm(reservation)
+    reservation = complete_calculated_columns_of_negotiation(reservation)
+
+    return reservation
+
+
 def complete_calculated_columns_of_negotiation(reservation):
     negotiationPercentage = int(reservation["negotiation"])
     reservation["comisionPpto"] = negotiationPercentage * \
@@ -176,11 +189,14 @@ def check_new_property(listingName):
 
 
 def update_computed_values(property: Property):
-    update_computed_values_of_negotiation(property)
     update_computed_values_of_trm(property)
+    update_computed_values_of_negotiation(property)
 
 
 def update_computed_values_of_negotiation(property: Property):
+    if (len(property.negotiations) == 0):
+        return
+
     lastNegotiation = property.negotiations[-1]
 
     fileteredReservations = firestore_client.collection(
@@ -197,6 +213,9 @@ def update_computed_values_of_negotiation(property: Property):
 
 
 def update_computed_values_of_trm(property: Property):
+    if (len(property.trms) == 0):
+        return
+
     lastTrm = property.trms[-1]
 
     fileteredReservations = firestore_client.collection(
@@ -211,6 +230,15 @@ def update_computed_values_of_trm(property: Property):
                 complete_calculated_columns_of_trm(jsonReservation), False)
 
 
+def get_property(listingName: str) -> Property:
+    document = firestore_client.collection(
+        "properties").where(u'listingName', u'==', property["listingName"]).get()
+
+    mockJson = {"listingName": listingName, "negotiations": [], "trms": []}
+
+    Property(document[0]._data) if len(document) != 0 else Property(mockJson)
+
+
 def update_property(property):
     documentId = firestore_client.collection(
         "properties").where(u'listingName', u'==', property["listingName"]).get()
@@ -223,3 +251,21 @@ def update_property(property):
     update_computed_values(Property(property))
 
     return "OK"
+
+
+def get_property_last_trm(listingName: str):
+    property = get_property(listingName)
+
+    if (len(property.trms) == 0):
+        return 4700
+
+    return property.trms[-1].trm
+
+
+def get_property_last_negotiation(listingName: str):
+    property = get_property(listingName)
+
+    if (len(property.negotiations) == 0):
+        return 0.2
+
+    return property.negotiations[-1].percentage
