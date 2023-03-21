@@ -8,5 +8,6 @@ class Property:
                  jsonProperty):
         self.listingName = jsonProperty["listingName"]
         self.negotiations = [Negotiation(neg)
-                             for neg in jsonProperty["negotiations"]]
-        self.trms = [Trm(trm) for trm in jsonProperty["trms"]]
+                             for neg in jsonProperty["negotiations"]] if "negotiations" in jsonProperty else []
+        self.trms = [Trm(trm) for trm in jsonProperty["trms"]
+                     ] if "trms" in jsonProperty else []

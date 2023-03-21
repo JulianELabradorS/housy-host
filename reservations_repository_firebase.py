@@ -166,7 +166,7 @@ def complete_calculated_columns_of_negotiation(reservation):
         return reservation
 
     reservation["comisionPptoCOP"] = negotiationPercentage * \
-        int(reservation["totalPriceCOP"])
+        int(reservation["COP"])
 
     if ("presupuestoReal" in reservation):
         reservation["comisionRealCOP"] = negotiationPercentage * \
@@ -246,11 +246,11 @@ def update_computed_values_of_trm(property: Property):
 
 def get_property(listingName: str) -> Property:
     document = firestore_client.collection(
-        "properties").where(u'listingName', u'==', property["listingName"]).get()
+        "properties").where(u'listingName', u'==', listingName).get()
 
     mockJson = {"listingName": listingName, "negotiations": [], "trms": []}
 
-    Property(document[0]._data) if len(document) != 0 else Property(mockJson)
+    return Property(document[0]._data) if len(document) != 0 else Property(mockJson)
 
 
 def update_property(property):
@@ -294,7 +294,9 @@ def transform_to_COP(reservation):
                              ) * int(reservation['trm'])
 
     for column in COLUMNS_TO_MODIFY_BY_TRM:
-        reservation[column+"COP"] = int(reservation[column]) * \
-            int(reservation["trm"])
+        if (column not in reservation):
+            reservation[column] = 0
+        reservation[column+"COP"] = int(reservation[column] if reservation[column]
+                                        != None else 0) * int(reservation["trm"])
 
     return reservation
