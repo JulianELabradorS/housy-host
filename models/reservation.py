@@ -17,7 +17,13 @@ class Reservation:
                  listingName: str,
                  currency: str,
                  trm: str,
-                 cop: str):
+                 cop: str,
+                 aseoPptoCOP,
+                 comisionPptoCOP,
+                 comisionRealCOP,
+                 netoPropietarioCOP,
+                 presupuestoRealCOP,
+                 aseoRealCOP):
         self.id = idReserva
         self.guestName = reserva
         self.totalPrice = presupuesto
@@ -36,3 +42,9 @@ class Reservation:
         self.currency = currency
         self.trm = trm
         self.cop = cop
+        self.aseoPptoCOP = aseoPptoCOP
+        self.comisionPptoCOP = comisionPptoCOP
+        self.comisionRealCOP = comisionRealCOP
+        self.netoPropietarioCOP = netoPropietarioCOP
+        self.presupuestoRealCOP = presupuestoRealCOP
+        self.aseoRealCOP = aseoRealCOP

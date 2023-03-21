@@ -3,6 +3,7 @@ from firebase_admin import credentials, firestore
 from models.property import Property
 from models.reservation import Reservation
 from utils.dates import get_month, get_month_str, get_year
+from constants.columns import COLUMNS_TO_MODIFY_BY_TRM
 
 cred = credentials.Certificate("./assets/cloudconsole.credentials.json")
 firebase_admin.initialize_app(cred)
@@ -115,6 +116,13 @@ def get_reservation_object(reservation) -> Reservation:
         reservation["currency"],
         reservation["trm"] if "trm" in reservation else "",
         reservation["cop"] if "cop" in reservation else "",
+        reservation['aseoPptoCOP'],
+        reservation['comisionPptoCOP'],
+        reservation['comisionRealCOP'],
+        reservation['netoPropietarioCOP'],
+        reservation['presupuestoRealCOP'],
+        reservation['aseoRealCOP'],
+
     )
 
 
@@ -134,7 +142,7 @@ def calculate_columns_new_reservation(reservation):
     reservation['negotiation'] = get_property_last_negotiation(
         reservation["listingName"])
 
-    reservation = complete_calculated_columns_of_trm(reservation)
+    reservation = transform_to_COP(reservation)
     reservation = complete_calculated_columns_of_negotiation(reservation)
 
     return reservation
@@ -142,25 +150,31 @@ def calculate_columns_new_reservation(reservation):
 
 def complete_calculated_columns_of_negotiation(reservation):
     negotiationPercentage = int(reservation["negotiation"])
-    reservation["comisionPpto"] = negotiationPercentage * \
-        int(reservation["totalPrice"])
+
+    if (reservation['currency'] == 'COP'):
+        reservation["comisionPpto"] = negotiationPercentage * \
+            int(reservation["totalPrice"])
+
+        if ("presupuestoReal" in reservation):
+            reservation["comisionReal"] = negotiationPercentage * \
+                (int(reservation["presupuestoReal"]) -
+                 int(reservation["aseoReal"]))
+
+            reservation["netoPropietario"] = int(reservation["presupuestoReal"]) - \
+                int(reservation["comisionReal"])
+
+        return reservation
+
+    reservation["comisionPptoCOP"] = negotiationPercentage * \
+        int(reservation["totalPriceCOP"])
 
     if ("presupuestoReal" in reservation):
-        reservation["comisionReal"] = negotiationPercentage * \
-            (int(reservation["presupuestoReal"]) -
-             int(reservation["aseoReal"]))
+        reservation["comisionRealCOP"] = negotiationPercentage * \
+            (int(reservation["presupuestoRealCOP"]) -
+             int(reservation["aseoRealCOP"]))
 
-        reservation["netoPropietario"] = int(reservation["presupuestoReal"]) - \
-            int(reservation["comisionReal"])
-
-    return reservation
-
-
-def complete_calculated_columns_of_trm(reservation):
-    trm = reservation["trm"]
-
-    if (reservation["currency"] != "COP"):
-        reservation["cop"] = int(reservation["totalPrice"]) * int(trm)
+        reservation["netoPropietarioCOP"] = int(reservation["presupuestoRealCOP"]) - \
+            int(reservation["comisionRealCOP"])
 
     return reservation
 
@@ -227,7 +241,7 @@ def update_computed_values_of_trm(property: Property):
                 & jsonReservation["monthNumber"] <= lastTrm.toMonth):
             jsonReservation["trm"] = lastTrm.trm
             update_reservation(
-                complete_calculated_columns_of_trm(jsonReservation), False)
+                transform_to_COP(jsonReservation), False)
 
 
 def get_property(listingName: str) -> Property:
@@ -269,3 +283,18 @@ def get_property_last_negotiation(listingName: str):
         return 0.2
 
     return property.negotiations[-1].percentage
+
+
+def transform_to_COP(reservation):
+    if (reservation["currency"] == 'COP'):
+        reservation['COP'] = reservation["totalPrice"]
+        return reservation
+
+    reservation['COP'] = int(reservation["totalPrice"]
+                             ) * int(reservation['trm'])
+
+    for column in COLUMNS_TO_MODIFY_BY_TRM:
+        reservation[column+"COP"] = int(reservation[column]) * \
+            int(reservation["trm"])
+
+    return reservation
