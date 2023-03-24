@@ -1,8 +1,7 @@
 import json
-import asyncio
 from flask import Flask, request
 from flask_cors import CORS, cross_origin
-import reservations_service
+import services.reservations_service as reservations_service
 
 RESERVATION_UPDATED = "reservation.updated"
 RESERVATION_CREATED = "reservation.created"

@@ -1,6 +1,8 @@
 import requests
 import time
-import reservations_repository_firebase
+from models.property import Property
+import repositories.reservations_repository as reservations_repository
+import repositories.property_repository as property_repository
 
 limit = 250
 offset = 0
@@ -19,7 +21,7 @@ def getHostawayReservations():
     print("Number of reservations loaded: " + str(offset) +
           "\nAnd this result: " + str(len(response['result'])))
 
-    reservations_repository_firebase.save_reservations(response['result'])
+    reservations_repository.save_reservations(response['result'])
 
     return response
 
@@ -43,24 +45,27 @@ def load_reservations():
 
 
 def create_reservation(reservation):
-    result = reservations_repository_firebase.create_reservation(reservation)
+    result = reservations_repository.create_reservation(reservation)
 
 
 def update_reservation(reservation):
-    result = reservations_repository_firebase.update_reservation(reservation)
+    result = reservations_repository.update_reservation(reservation)
 
 
 def get_reservations():
-    return reservations_repository_firebase.get_reservations()
+    return reservations_repository.get_reservations()
 
 
 def get_paginated_reservations(limit, start_at, order_by, direction):
-    return reservations_repository_firebase.get_paginated_reservations(limit, start_at, order_by, direction)
+    return reservations_repository.get_paginated_reservations(limit, start_at, order_by, direction)
 
 
 def get_properties():
-    return reservations_repository_firebase.get_properties()
+    return property_repository.get_properties()
 
 
 def update_property(property):
-    return reservations_repository_firebase.update_property(property)
+    result = property_repository.update_property(property)
+    reservations_repository.update_computed_values(Property(property))
+
+    return result
