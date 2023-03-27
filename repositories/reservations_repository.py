@@ -15,9 +15,6 @@ def save_reservations(reservations):
         batch = firestore_client.batch()
         collection = firestore_client.collection("reservations")
         for reservation in reservations:
-            reservation = complete_columns_data(reservation)
-            reservation = calculate_columns_new_reservation(reservation)
-
             batch.set(collection.document(str(reservation["id"])), reservation)
 
             check_new_property(reservation["listingName"])

@@ -37,10 +37,7 @@ def get_properties():
 
 
 def check_new_property(listingName):
-    result = firestore_client.collection(
-        "properties").get()
-
-    properties = [res._data["listingName"] for res in result]
+    properties = get_properties()["properties"]
 
     if listingName in properties:
         return

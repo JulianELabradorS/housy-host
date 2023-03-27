@@ -17,7 +17,7 @@ class Reservation:
                  listingName: str,
                  currency: str,
                  trm: str,
-                 cop: str,
+                 totalPriceCOP: str,
                  aseoPptoCOP,
                  comisionPptoCOP,
                  comisionRealCOP,
@@ -41,7 +41,7 @@ class Reservation:
         self.listingName = listingName
         self.currency = currency
         self.trm = trm
-        self.cop = cop
+        self.totalPriceCOP = totalPriceCOP
         self.aseoPptoCOP = aseoPptoCOP
         self.comisionPptoCOP = comisionPptoCOP
         self.comisionRealCOP = comisionRealCOP

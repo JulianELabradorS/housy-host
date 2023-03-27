@@ -3,6 +3,7 @@ import time
 from models.property import Property
 import repositories.reservations_repository as reservations_repository
 import repositories.property_repository as property_repository
+from utils.columns_calculation import calculate_columns_new_reservation, complete_columns_data
 
 limit = 250
 offset = 0
@@ -21,7 +22,14 @@ def getHostawayReservations():
     print("Number of reservations loaded: " + str(offset) +
           "\nAnd this result: " + str(len(response['result'])))
 
-    reservations_repository.save_reservations(response['result'])
+    reservations = response['result']
+
+    reservation = [complete_columns_data(
+        reservation) for reservation in reservations]
+    reservation = [calculate_columns_new_reservation(
+        reservation) for reservation in reservations]
+
+    reservations_repository.save_reservations(reservation)
 
     return response
 

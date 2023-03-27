@@ -44,7 +44,7 @@ def unified_webhook():
 @cross_origin()
 def get_reservations():
     result = reservations_service.get_reservations()
-    return json.dumps([obj.__dict__ for obj in result]), 200
+    return json.dumps({'reservations': [obj.__dict__ for obj in result]}), 200
 
 
 @app.route("/paginated-reservations", methods=["GET"])
