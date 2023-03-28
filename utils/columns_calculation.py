@@ -80,9 +80,11 @@ def transform_to_COP(reservation):
 
 
 def complete_columns_data(reservation):
-    reservation["aseoPpto"] = reservation["airbnbListingCleaningFee"] if reservation[
-        "channelName"] == "airbnbOfficial" else reservation["cleaningFee"]
-    reservation["aseoReal"] = reservation["aseoPpto"]
+    if "aseoPpto" not in reservation:
+        reservation["aseoPpto"] = reservation["airbnbListingCleaningFee"] if reservation[
+            "channelName"] == "airbnbOfficial" else reservation["cleaningFee"]
+    if "aseoReal" not in reservation:
+        reservation["aseoReal"] = reservation["aseoPpto"]
     reservation["mes"] = get_month_str(reservation["reservationDate"])
     reservation["monthNumber"] = get_month(reservation["reservationDate"])
     reservation["anio"] = get_year(reservation["reservationDate"])

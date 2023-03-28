@@ -17,5 +17,10 @@ class Property:
                 self.negotiations = [Negotiation(
                     neg) for neg in jsonProperty['negotiations']]
 
-        self.trms = [Trm(trm) for trm in jsonProperty["trms"]
-                     ] if "trms" in jsonProperty else []
+        if ("trms" not in jsonProperty):
+            self.trms = []
+        elif ("trms" in jsonProperty):
+            if (any(trm is None for trm in jsonProperty['trms'])):
+                self.trms = []
+            else:
+                self.trms = [Trm(trm) for trm in jsonProperty['trms']]

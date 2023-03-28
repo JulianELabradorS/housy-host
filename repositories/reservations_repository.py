@@ -109,7 +109,7 @@ def update_computed_values_of_negotiation(property: Property):
             jsonReservation["negotiation"] = lastNegotiation.percentage
 
             update_reservation(
-                complete_calculated_columns_of_negotiation(jsonReservation), False)
+                complete_calculated_columns_of_negotiation(jsonReservation))
 
 
 def update_computed_values_of_trm(property: Property):
@@ -131,5 +131,5 @@ def update_computed_values_of_trm(property: Property):
 
 
 def update_computed_values(property: Property):
-    update_computed_values_of_trm(property)
     update_computed_values_of_negotiation(property)
+    update_computed_values_of_trm(property)
