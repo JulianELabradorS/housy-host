@@ -56,7 +56,11 @@ def get_property_last_negotiation(listingName: str):
 
 
 def transform_to_COP(reservation):
-    trm = reservation['trm'] if "trmReal" not in reservation else reservation['trmReal']
+    if ("trmReal" in reservation):
+        trm = reservation['trm'] if reservation["trmReal"] == "" else reservation['trmReal']
+    else:
+        trm = reservation["trm"]
+
     if (reservation["currency"] == 'COP'):
         reservation['totalPriceCOP'] = reservation["totalPrice"]
         for column in COLUMNS_TO_MODIFY_BY_TRM:
