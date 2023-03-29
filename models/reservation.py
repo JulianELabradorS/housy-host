@@ -24,7 +24,8 @@ class Reservation:
                  netoPropietarioCOP,
                  presupuestoRealCOP,
                  aseoRealCOP,
-                 trmReal):
+                 trmReal,
+                 arrivalDate):
         self.id = idReserva
         self.guestName = reserva
         self.totalPrice = presupuesto
@@ -50,3 +51,4 @@ class Reservation:
         self.presupuestoRealCOP = presupuestoRealCOP
         self.aseoRealCOP = aseoRealCOP
         self.trmReal = trmReal
+        self.arrivalDate = arrivalDate
