@@ -17,7 +17,7 @@ def get_reservation_object(reservation) -> Reservation:
         reservation["aseoReal"] if "aseoReal" in reservation else "",
         reservation["nights"],
         reservation["channelName"],
-        reservation["negotiation"] if "negotiation" in reservation else "",
+        reservation["negociacion"] if "negociacion" in reservation else "",
         reservation["mes"],
         reservation["anio"],
         reservation["listingName"],
@@ -30,6 +30,7 @@ def get_reservation_object(reservation) -> Reservation:
         reservation['netoPropietarioCOP'] if 'netoPropietarioCOP' in reservation else "",
         reservation['presupuestoRealCOP'] if 'presupuestoRealCOP' in reservation else "",
         reservation['aseoRealCOP'] if 'aseoRealCOP' in reservation else "",
+        reservation['trmReal'] if 'trmReal' in reservation else "",
     )
 
 
@@ -55,6 +56,7 @@ def get_property_last_negotiation(listingName: str):
 
 
 def transform_to_COP(reservation):
+    trm = reservation['trm'] if "trmReal" not in reservation else reservation['trmReal']
     if (reservation["currency"] == 'COP'):
         reservation['totalPriceCOP'] = reservation["totalPrice"]
         for column in COLUMNS_TO_MODIFY_BY_TRM:
@@ -65,16 +67,17 @@ def transform_to_COP(reservation):
 
         return reservation
 
-    reservation['totalPriceCOP'] = int(reservation["totalPrice"]
-                                       ) * int(reservation['trm'])
+    reservation['totalPriceCOP'] = float(reservation["totalPrice"]
+                                         ) * float(trm)
 
     for column in COLUMNS_TO_MODIFY_BY_TRM:
         if (column not in reservation):
             reservation[column+"COP"] = 0
             continue
 
-        reservation[column+"COP"] = int(reservation[column] if reservation[column]
-                                        != None else 0) * int(reservation["trm"])
+        if (reservation[column] != None):
+            reservation[column +
+                        "COP"] = float(reservation[column]) * float(trm)
 
     return reservation
 
@@ -93,7 +96,7 @@ def complete_columns_data(reservation):
 
 
 def calculate_columns_new_reservation(reservation):
-    reservation['negotiation'] = get_property_last_negotiation(
+    reservation['negociacion'] = get_property_last_negotiation(
         reservation["listingName"])
     reservation['trm'] = get_property_last_trm(reservation["listingName"])
 
@@ -104,18 +107,18 @@ def calculate_columns_new_reservation(reservation):
 
 
 def complete_calculated_columns_of_negotiation(reservation):
-    negotiationPercentage = int(reservation["negotiation"])
+    negotiationPercentage = float(reservation["negociacion"])
 
     reservation["comisionPpto"] = negotiationPercentage * \
-        int(reservation["totalPrice"])
+        float(reservation["totalPrice"])
 
-    if ("presupuestoReal" in reservation):
+    if ("presupuestoReal" in reservation and "aseoReal" in reservation):
         reservation["comisionReal"] = negotiationPercentage * \
-            (int(reservation["presupuestoReal"]) -
-             int(reservation["aseoReal"]))
+            (float(reservation["presupuestoReal"]) -
+             float(reservation["aseoReal"]))
 
-        reservation["netoPropietario"] = int(reservation["presupuestoReal"]) - \
-            int(reservation["comisionReal"])
+        reservation["netoPropietario"] = float(reservation["presupuestoReal"]) - \
+            float(reservation["comisionReal"])
 
     # reservation["comisionPptoCOP"] = negotiationPercentage * \
     #     int(reservation["totalPriceCOP"])

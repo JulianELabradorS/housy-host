@@ -23,7 +23,8 @@ class Reservation:
                  comisionRealCOP,
                  netoPropietarioCOP,
                  presupuestoRealCOP,
-                 aseoRealCOP):
+                 aseoRealCOP,
+                 trmReal):
         self.id = idReserva
         self.guestName = reserva
         self.totalPrice = presupuesto
@@ -48,3 +49,4 @@ class Reservation:
         self.netoPropietarioCOP = netoPropietarioCOP
         self.presupuestoRealCOP = presupuestoRealCOP
         self.aseoRealCOP = aseoRealCOP
+        self.trmReal = trmReal

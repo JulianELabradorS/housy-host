@@ -3,7 +3,7 @@ import time
 from models.property import Property
 import repositories.reservations_repository as reservations_repository
 import repositories.property_repository as property_repository
-from utils.columns_calculation import calculate_columns_new_reservation, complete_columns_data
+from utils.columns_calculation import calculate_columns_new_reservation, complete_calculated_columns_of_negotiation, complete_columns_data, transform_to_COP
 
 limit = 250
 offset = 0
@@ -53,10 +53,14 @@ def load_reservations():
 
 
 def create_reservation(reservation):
+    reservation = complete_calculated_columns_of_negotiation(reservation)
+    reservation = transform_to_COP(reservation)
     result = reservations_repository.create_reservation(reservation)
 
 
 def update_reservation(reservation):
+    reservation = complete_calculated_columns_of_negotiation(reservation)
+    reservation = transform_to_COP(reservation)
     result = reservations_repository.update_reservation(reservation)
 
 

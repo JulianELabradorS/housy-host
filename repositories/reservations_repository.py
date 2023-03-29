@@ -1,4 +1,5 @@
 from firebase_admin import firestore
+
 from models.property import Property
 from repositories.base_repository import get_firestore_client
 from repositories.property_repository import check_new_property, get_property
@@ -27,9 +28,6 @@ def save_reservations(reservations):
 
 def create_reservation(reservation):
     try:
-        reservation = complete_columns_data(reservation)
-        reservation = calculate_columns_new_reservation(reservation)
-
         document = firestore_client.collection(
             "reservations").document(str(reservation['id']))
         document.set(reservation)
@@ -42,14 +40,16 @@ def create_reservation(reservation):
         return "ERROR. Reservation not saved. Exception %" % e
 
 
-def update_reservation(reservation):
+def update_reservation(reservation, update_property=True):
     try:
-        property = get_property(reservation["listingName"])
-        reservation = update_computed_values(property)
 
         document = firestore_client.collection(
             "reservations").document(str(reservation['id']))
         document.update(reservation)
+
+        if (update_property):
+            property = get_property(reservation["listingName"])
+            update_computed_values(property)
 
         return "Reservation updated"
     except Exception as e:
@@ -104,12 +104,17 @@ def update_computed_values_of_negotiation(property: Property):
 
     for res in fileteredReservations:
         jsonReservation = res._data
-        if (jsonReservation["monthNumber"] >= lastNegotiation.fromMonth
-                & jsonReservation["monthNumber"] <= lastNegotiation.toMonth):
+        if ((lastNegotiation != None) & (jsonReservation["monthNumber"] >= lastNegotiation.fromMonth)
+                & (jsonReservation["monthNumber"] <= lastNegotiation.toMonth)):
+            jsonReservation["negociacion"] = lastNegotiation.percentage
             jsonReservation["negotiation"] = lastNegotiation.percentage
+            print(str(jsonReservation["id"])+" - " +
+                  str(jsonReservation["negociacion"]))
+            jsonReservation = complete_calculated_columns_of_negotiation(
+                jsonReservation)
+            jsonReservation = transform_to_COP(jsonReservation)
 
-            update_reservation(
-                complete_calculated_columns_of_negotiation(jsonReservation))
+            update_reservation(jsonReservation, False)
 
 
 def update_computed_values_of_trm(property: Property):
@@ -123,13 +128,18 @@ def update_computed_values_of_trm(property: Property):
 
     for res in fileteredReservations:
         jsonReservation = res._data
-        if (jsonReservation["monthNumber"] >= lastTrm.fromMonth
-                & jsonReservation["monthNumber"] <= lastTrm.toMonth):
-            jsonReservation["trm"] = lastTrm.trm
-            update_reservation(
-                transform_to_COP(jsonReservation), False)
+        if ((lastTrm != None) & (jsonReservation["monthNumber"] >= lastTrm.fromMonth)
+                & (jsonReservation["monthNumber"] <= lastTrm.toMonth)):
+            jsonReservation["trmReal"] = lastTrm.trm
+
+            jsonReservation = transform_to_COP(jsonReservation)
+            update_reservation(jsonReservation, False)
+
+    return "OK"
 
 
 def update_computed_values(property: Property):
     update_computed_values_of_negotiation(property)
-    update_computed_values_of_trm(property)
+    result = update_computed_values_of_trm(property)
+
+    return result
