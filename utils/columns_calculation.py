@@ -80,7 +80,7 @@ def transform_to_COP(reservation):
             reservation[column+"COP"] = 0
             continue
 
-        if (reservation[column] != None):
+        if (reservation[column] != None and reservation[column] != ""):
             reservation[column +
                         "COP"] = float(reservation[column]) * float(trm)
 
@@ -117,7 +117,7 @@ def complete_calculated_columns_of_negotiation(reservation):
     reservation["comisionPpto"] = negotiationPercentage * \
         float(reservation["totalPrice"])
 
-    if ("presupuestoReal" in reservation and "aseoReal" in reservation):
+    if (("presupuestoReal" in reservation) and ("aseoReal" in reservation) and (reservation["presupuestoReal"] != "") and (reservation["aseoReal"] != "")):
         reservation["comisionReal"] = negotiationPercentage * \
             (float(reservation["presupuestoReal"]) -
              float(reservation["aseoReal"]))
