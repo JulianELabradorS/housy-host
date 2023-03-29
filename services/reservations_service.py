@@ -53,8 +53,8 @@ def load_reservations():
 
 
 def create_reservation(reservation):
-    reservation = complete_calculated_columns_of_negotiation(reservation)
-    reservation = transform_to_COP(reservation)
+    reservation = complete_columns_data(reservation)
+    reservation = calculate_columns_new_reservation(reservation)
     result = reservations_repository.create_reservation(reservation)
 
 
