@@ -25,7 +25,8 @@ class Reservation:
                  presupuestoRealCOP,
                  aseoRealCOP,
                  trmReal,
-                 arrivalDate):
+                 arrivalDate,
+                 status):
         self.id = idReserva
         self.guestName = reserva
         self.totalPrice = presupuesto
@@ -52,3 +53,4 @@ class Reservation:
         self.aseoRealCOP = aseoRealCOP
         self.trmReal = trmReal
         self.arrivalDate = arrivalDate
+        self.status = status

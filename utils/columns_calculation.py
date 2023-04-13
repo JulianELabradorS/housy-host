@@ -32,6 +32,7 @@ def get_reservation_object(reservation) -> Reservation:
         reservation['aseoRealCOP'] if 'aseoRealCOP' in reservation else "",
         reservation['trmReal'] if 'trmReal' in reservation else "",
         reservation['arrivalDate'] if 'arrivalDate' in reservation else "",
+        reservation['status'] if 'status' in reservation else ''
     )
 
 
