@@ -1,12 +1,10 @@
 from firebase_admin import firestore
+from flask import abort
 
-from models.property import Property
 from repositories.base_repository import get_firestore_client
-from repositories.property_repository import check_new_property, get_property
-from utils.columns_calculation import (
-    calculate_columns_new_reservation,
-    complete_calculated_columns_of_negotiation, complete_columns_data,
-    get_reservation_object, transform_to_COP)
+import repositories.prorated_reservation_repository as prorated_reservation_repository
+from models.reservation import get_reservation_object
+from dateutil.relativedelta import relativedelta
 
 firestore_client = get_firestore_client()
 
@@ -16,130 +14,83 @@ def save_reservations(reservations):
         batch = firestore_client.batch()
         collection = firestore_client.collection("reservations")
         for reservation in reservations:
-            batch.set(collection.document(str(reservation["id"])), reservation)
-
-            check_new_property(reservation["listingName"])
-
-        batch.commit()
+            obj_reservation = get_reservation_object(reservation)
+            tabulated_data = obj_reservation.get_prorated_data_of_reservation()
+            prorated_reservation_repository.save_prorated_reservation(tabulated_data)
+            batch.set(collection.document(str(obj_reservation.id)),
+                      obj_reservation.to_dict())
+            batch.commit()
         return "Batch saved"
     except Exception as e:
         return "ERROR. Batch not saved. Exception: %" % e
 
 
 def create_reservation(reservation):
-    try:
-        document = firestore_client.collection(
-            "reservations").document(str(reservation['id']))
-        document.set(reservation)
-
-        check_new_property(reservation["listingName"])
-
-        return "Reservation saved"
-
-    except Exception as e:
-        return "ERROR. Reservation not saved. Exception %" % e
+    obj_reservation = get_reservation_object(reservation)
+    tabulated_data = obj_reservation.get_prorated_data_of_reservation()
+    prorated_reservation_repository.update_prorated_reservation(tabulated_data)
+    document = firestore_client.collection(
+        "reservations").document(str(obj_reservation.id))
+    document.set(obj_reservation.to_dict())
+    return "Reservation saved"
 
 
-def update_reservation(reservation, update_property=True):
-    try:
-
-        document = firestore_client.collection(
-            "reservations").document(str(reservation['id']))
-        document.update(reservation)
-
-        if (update_property):
-            property = get_property(reservation["listingName"])
-            update_computed_values(property)
-
-        return "Reservation updated"
-    except Exception as e:
-        print(e)
-        return create_reservation(reservation)
+def update_reservation(reservation):
+    obj_reservation = get_reservation_object(reservation)
+    tabulated_data = obj_reservation.get_prorated_data_of_reservation()
+    prorated_reservation_repository.update_prorated_reservation(tabulated_data)
+    document = firestore_client.collection(
+        "reservations").document(str(obj_reservation.id))
+    document.update(obj_reservation.to_dict())
+    return document
 
 
-def get_reservations():
-    try:
-        reservations = []
-        result = firestore_client.collection("reservations").get()
-        for res in result:
-            reservations.append(get_reservation_object(res._data))
+def get_paginated_reservations(limit, start_at, propertyId, date):
+    query = firestore_client.collection("reservations")
+    reservations = []
 
-        return reservations
-    except Exception as e:
-        print(e)
+    # Aplicar filtros iniciales
+    query = query.where('status', 'in', ['new', 'modified']).order_by(
+        'id', direction=firestore.Query.DESCENDING)
+    if (date):
+        query = query.where("arrivalDateMonth", "==", date.month).where(
+            "arrivalDateYear", "==", date.year)
+    if (propertyId):
+        query = query.where('listingMapId', '==', int(propertyId))
+    if (start_at):
+        query = query.start_at({u'id': int(start_at)})
+    query = query.limit(int(limit))
+    result = query.get()
+    print(result)
+    for reservation in result:
+        reservation_dict = reservation.to_dict()
+        date_fields = ["reservationDate",
+                       "arrivalDate",
+                       "departureDate",
+                       "previousArrivalDate",
+                       "previousDepartureDate",
+                       "cancellationDate",
+                       "insertedOn",
+                       "updatedOn",
+                       "latestActivityOn"]
+        for field in date_fields:
+            if reservation_dict[field]:
+                reservation_dict[field] = reservation_dict[field].strftime(
+                    "%Y-%m-%d")
+        reservations.append(reservation_dict)
 
-
-def get_paginated_reservations(limit, start_at, order_by, direction):
-    direction = firestore.Query.DESCENDING if direction == "descending" else firestore.Query.ASCENDING
-
-    try:
-        reservations = []
-
-        if (start_at):
-            query = firestore_client.collection(
-                "reservations").order_by(order_by, direction=direction).start_at({u'id': int(start_at)}).limit(int(limit))
-        else:
-            query = firestore_client.collection(
-                "reservations").order_by(order_by, direction=direction).limit(int(limit))
-
-        result = query.get()
-
-        for res in result:
-            reservations.append(get_reservation_object(res._data))
-
-        return {'reservations': [obj.__dict__ for obj in reservations],
-                'last_id': reservations[-1].id}
-    except Exception as e:
-        print(e)
-
-
-def update_computed_values_of_negotiation(property: Property):
-    if (len(property.negotiations) == 0):
-        return
-
-    lastNegotiation = property.negotiations[-1]
-
-    fileteredReservations = firestore_client.collection(
-        "reservations").where(u'listingName', u'==', property.listingName).where(u'anio', u'>=', lastNegotiation.fromYear).where(u'anio', u'<=', lastNegotiation.toYear).get()
-
-    for res in fileteredReservations:
-        jsonReservation = res._data
-        if ((lastNegotiation != None) & (jsonReservation["monthNumber"] >= lastNegotiation.fromMonth)
-                & (jsonReservation["monthNumber"] <= lastNegotiation.toMonth)):
-            jsonReservation["negociacion"] = lastNegotiation.percentage
-            jsonReservation["negotiation"] = lastNegotiation.percentage
-            print(str(jsonReservation["id"])+" - " +
-                  str(jsonReservation["negociacion"]))
-            jsonReservation = complete_calculated_columns_of_negotiation(
-                jsonReservation)
-            jsonReservation = transform_to_COP(jsonReservation)
-
-            update_reservation(jsonReservation, False)
+    return {'data': reservations,
+            'last_id': reservations[-1]["id"] if len(reservations) else None}
 
 
-def update_computed_values_of_trm(property: Property):
-    if (len(property.trms) == 0):
-        return
-
-    lastTrm = property.trms[-1]
-
-    fileteredReservations = firestore_client.collection(
-        "reservations").where(u'listingName', u'==', property.listingName).where(u'anio', u'>=', lastTrm.fromYear).where(u'anio', u'<=', lastTrm.toYear).get()
-
-    for res in fileteredReservations:
-        jsonReservation = res._data
-        if ((lastTrm != None) & (jsonReservation["monthNumber"] >= lastTrm.fromMonth)
-                & (jsonReservation["monthNumber"] <= lastTrm.toMonth)):
-            jsonReservation["trmReal"] = lastTrm.trm
-
-            jsonReservation = transform_to_COP(jsonReservation)
-            update_reservation(jsonReservation, False)
-
-    return "OK"
-
-
-def update_computed_values(property: Property):
-    update_computed_values_of_negotiation(property)
-    result = update_computed_values_of_trm(property)
-
-    return result
+def update_fields_real_total_paid_in_reservation(id, currency, totalPaid, totalPaidCleaning):
+    doc_ref = firestore_client.collection(
+        "reservations").document(id)
+    doc = doc_ref.get()
+    if not doc.exists:
+        return 'there is no reservation with this id', 404
+    doc_ref.update(
+        {"realValueReceived": totalPaid, "realCleaningFee": totalPaidCleaning, "realValuesCurrency": currency})
+    prorated_reservation_repository.update_real_totals_in_prorrated_reservations(
+        id, currency, totalPaid, totalPaidCleaning)
+    return {"sucess": True}

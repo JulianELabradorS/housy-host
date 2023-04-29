@@ -1,26 +1,46 @@
-from typing import List
-from .trm_model import Trm
-from .negotiation_model import Negotiation
+from datetime import datetime
 
 
 class Property:
     def __init__(self,
-                 jsonProperty):
-        self.listingName = jsonProperty["listingName"]
+                 id: int,
+                 internalListingName: str,
+                 country: str,
+                 countryCode: str,
+                 state: str,
+                 city: str,
+                 percentageNegotiated: int
+                 ):
+        self.id = id
+        self.internalListingName = internalListingName
+        self.country = country
+        self.countryCode = countryCode
+        self.countryCode = countryCode
+        self.state = state
+        self.city = city
+        self.percentageNegotiated = percentageNegotiated
+        self.isNew = True
 
-        if ("negotiations" not in jsonProperty):
-            self.negotiations = []
-        elif ("negotiations" in jsonProperty):
-            if (any(neg is None for neg in jsonProperty['negotiations'])):
-                self.negotiations = []
-            else:
-                self.negotiations = [Negotiation(
-                    neg) for neg in jsonProperty['negotiations']]
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "internalListingName": self.internalListingName,
+            "country": self.country,
+            "countryCode": self.countryCode,
+            "state": self.state,
+            "city": self.city,
+            "percentageNegotiated": self.percentageNegotiated,
+            "isNew": self.isNew
+        }
 
-        if ("trms" not in jsonProperty):
-            self.trms = []
-        elif ("trms" in jsonProperty):
-            if (any(trm is None for trm in jsonProperty['trms'])):
-                self.trms = []
-            else:
-                self.trms = [Trm(trm) for trm in jsonProperty['trms']]
+
+def get_property_object(json_property):
+    return Property(
+        json_property["id"],
+        json_property["internalListingName"],
+        json_property["country"],
+        json_property["countryCode"],
+        json_property["state"],
+        json_property["city"],
+        0
+    )

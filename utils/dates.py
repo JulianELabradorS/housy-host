@@ -1,44 +1,43 @@
 from datetime import datetime
+from dateutil.relativedelta import relativedelta
 
 
-def get_month_str(date) -> str:
-    stringDate = date.split(" ")[0]
-    monthNumber = datetime.strptime(stringDate, "%Y-%m-%d").month
-
-    if monthNumber == 1:
-        return "Enero"
-    if monthNumber == 2:
-        return "Febrero"
-    if monthNumber == 3:
-        return "Marzo"
-    if monthNumber == 4:
-        return "Abril"
-    if monthNumber == 5:
-        return "Mayo"
-    if monthNumber == 6:
-        return "Junio"
-    if monthNumber == 7:
-        return "Julio"
-    if monthNumber == 8:
-        return "Agosto"
-    if monthNumber == 9:
-        return "Septiembre"
-    if monthNumber == 10:
-        return "Octubre"
-    if monthNumber == 11:
-        return "Noviembre"
-    if monthNumber == 12:
-        return "Diciembre"
-
-    return "Error"
+def normalize_date(string_date: str) -> datetime or None:
+    if (string_date):
+        len_date_array = len(string_date.split(" "))
+        if (len_date_array == 2):
+            return datetime.strptime(string_date, "%Y-%m-%d %H:%M:%S")
+        else:
+            return datetime.strptime(string_date, "%Y-%m-%d").replace(hour=0, minute=0, second=0, microsecond=0)
+    else:
+        return None
 
 
-def get_month(date) -> str:
-    stringDate = date.split(" ")[0]
-    monthNumber = datetime.strptime(stringDate, "%Y-%m-%d").month
-    return monthNumber
+def calculate_nights_by_month(check_in_date, check_out_date):
+    check_in_month_start = datetime(check_in_date.year, check_in_date.month, 1)
+    nights_in_first_month = min((check_in_month_start + relativedelta(
+        months=1) - check_in_date).days, (check_out_date - check_in_date).days)
+
+    result = {(check_in_date.year, check_in_date.month): nights_in_first_month}
+    current_month = check_in_month_start + relativedelta(months=1)
+    total_nights = nights_in_first_month
+
+    while current_month < check_out_date:
+        year_month_key = (current_month.year, current_month.month)
+        days_in_month = (
+            (current_month + relativedelta(months=1)) - current_month).days
+        nights_in_month = min(
+            (check_out_date - current_month).days, days_in_month)
+        result[year_month_key] = nights_in_month
+        total_nights += nights_in_month
+        current_month = current_month + relativedelta(months=1)
+
+    return [{"year": year, "month": month, "nights": nights} for (year, month), nights in result.items()], total_nights
 
 
-def get_year(date) -> str:
-    stringDate = date.split(" ")[0]
-    return datetime.strptime(stringDate, "%Y-%m-%d").year
+def convert_to_first_day_of_month_iso_string(date: str) -> datetime:
+    return datetime.fromisoformat(date.replace('Z', '+00:00')).replace(hour=0, minute=0, second=0, microsecond=0, day=1)
+
+
+def convert_to_start_of_day_of_month_iso_string(date: str) -> datetime:
+    return datetime.fromisoformat(date.replace('Z', '+00:00')).replace(hour=0, minute=0, second=0, microsecond=0)
